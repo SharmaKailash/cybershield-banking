@@ -14,6 +14,11 @@ import securityRoutes from './routes/securityRoutes.js';
 import { errorHandler, notFound } from './utils/errors.js';
 
 const app = express();
+const routeMiddleware = (module) => {
+  if (typeof module === 'function') return module;
+  if (typeof module?.default === 'function') return module.default;
+  throw new TypeError('A route module did not export an Express middleware function.');
+};
 const allowedOrigins = new Set(
   (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
     .split(',')
@@ -61,11 +66,11 @@ app.use(express.json({ limit: '20kb' }));
 app.use(morgan('tiny'));
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', simulated: true }));
 app.use('/api', apiLimiter);
-app.use('/api/auth', authRoutes);
-app.use('/api', accountRoutes);
-app.use('/api/approvals', approvalRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/security', securityRoutes);
+app.use('/api/auth', routeMiddleware(authRoutes));
+app.use('/api', routeMiddleware(accountRoutes));
+app.use('/api/approvals', routeMiddleware(approvalRoutes));
+app.use('/api/dashboard', routeMiddleware(dashboardRoutes));
+app.use('/api/security', routeMiddleware(securityRoutes));
 app.post('/api/fraud/assess', authenticate, assessFraudRequest);
 app.get('/api/security-events', authenticate, authorize('admin', 'checker'), getEvents);
 app.get('/api/threats', authenticate, getThreats);
