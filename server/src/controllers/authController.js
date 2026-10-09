@@ -13,11 +13,16 @@ const userSeeds = [
   { customerId: 'ADMIN1001', name: 'Security Administrator', role: 'admin', password: 'Shield@2026' },
   { customerId: 'CHECK1001', name: 'Maitri Sharma', role: 'checker', password: 'Shield@2026' },
 ];
-const users = await Promise.all(userSeeds.map(async (user) => ({ ...user, ...await hashPassword(user.password) })));
+let usersPromise;
+
+function getUsers() {
+  usersPromise ??= Promise.all(userSeeds.map(async (user) => ({ ...user, ...await hashPassword(user.password) })));
+  return usersPromise;
+}
 
 export async function seedDemoUsers() {
   if (!isDatabaseConnected()) return;
-  for (const user of users) {
+  for (const user of await getUsers()) {
     await User.updateOne(
       { customerId: user.customerId },
       { $set: { name: user.name, role: user.role, active: true }, $setOnInsert: { customerId: user.customerId, passwordHash: user.hash, passwordSalt: user.salt } },
@@ -39,6 +44,7 @@ const otpSchema = z.object({
 
 export async function login(req, res) {
   const input = parseBody(loginSchema, req.body);
+  const users = await getUsers();
   const user = users.find((candidate) => candidate.customerId === input.customerId.toUpperCase());
   const valid = user && await verifyPassword(input.password, user.salt, user.hash);
   if (!valid) {
