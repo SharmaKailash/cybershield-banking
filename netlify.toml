@@ -1,7 +1,17 @@
 [build]
-  base = "client"
-  command = "npm run build"
-  publish = "dist"
+  base = "."
+  command = "npm ci --prefix client && npm ci --prefix server && npm run build --prefix client"
+  publish = "client/dist"
+  functions = "server/netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"

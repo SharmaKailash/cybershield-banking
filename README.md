@@ -20,25 +20,20 @@ Set `MONGODB_URI` in `server/.env` to your MongoDB connection string to use your
 `npm run dev` starts both the client and API. Do not start another API with `npm run dev --prefix server` at the same time; if port 4000 is already occupied, stop the existing API process before starting another one.
 The Vite development server proxies `/api` requests to the API. For direct API requests, local development accepts localhost and private-network origins. In production, set `CLIENT_ORIGIN` in `server/.env` to the exact frontend origin (or a comma-separated list of origins); production does not automatically allow local development origins.
 
-## Deploy the demo
+## Deploy the demo to Netlify
 
-The frontend and API deploy as separate services. Do not use real customer, banking, or payment data.
+The Netlify site serves the Vite frontend and runs the Express API through a Netlify Function. The root [`netlify.toml`](./netlify.toml) installs both package sets, builds the frontend, publishes `client/dist`, routes `/api/*` to the function, and falls back to the SPA entry page. No separate Render service or `VITE_API_URL` is required.
 
-### Netlify frontend
-
-Import the repository from GitHub. The root [`netlify.toml`](./netlify.toml) sets the client base directory, Vite build command, publish directory, and SPA fallback. In Netlify site environment variables, set:
+After importing this repository in Netlify, add these private site environment variables and redeploy:
 
 | Variable | Value |
 |---|---|
-| `VITE_API_URL` | `https://YOUR-RENDER-SERVICE.onrender.com/api` |
+| `NODE_ENV` | `production` |
+| `CLIENT_ORIGIN` | The exact site origin, e.g. `https://cybersecuritybanking.netlify.app` |
+| `JWT_SECRET` | A newly generated random secret with at least 32 characters |
+| `MONGODB_URI` | Your MongoDB connection URI |
 
-Trigger a new deploy after setting or changing this variable; Vite reads it at build time.
-
-### Render API
-
-Create a Render Blueprint from the repository using [`render.yaml`](./render.yaml), or create a Web Service with root directory `server`, build command `npm ci`, and start command `npm start`. The Blueprint configures the health check, production mode, the Netlify origin shown above, and a generated JWT secret. Supply `MONGODB_URI` as a private Render environment variable. If your Netlify site has a different URL or a custom domain, update `CLIENT_ORIGIN` on Render to that exact origin and redeploy.
-
-Copy the Render service URL into Netlify's `VITE_API_URL` (with `/api` appended), then redeploy Netlify. Never commit `.env` files, `JWT_SECRET`, or database credentials.
+The function returns API endpoints under the same Netlify site, including `/api/health`. If `MONGODB_URI` is omitted, the demo falls back to in-memory data that is not persistent. Never commit `.env` files, `JWT_SECRET`, or database credentials, and use only fictional demo data.
 
 ## Demo access
 
