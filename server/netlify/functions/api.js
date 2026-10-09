@@ -9,7 +9,11 @@ import {
 } from '../../src/services/demoStore.js';
 
 const functionPath = '/.netlify/functions/api';
-const proxy = serverless(app);
+const expressApp = typeof app === 'function' ? app : app?.default;
+if (typeof expressApp !== 'function') {
+  throw new TypeError('The API module did not expose an Express application.');
+}
+const proxy = serverless(expressApp);
 let initialization;
 
 async function initialize() {
